@@ -1,7 +1,6 @@
 const mongoose = require("mongoose");
 const bcrypt = require("bcrypt");
 
-
 const userSchema = new mongoose.Schema({
   firstName: {
     type: String,
@@ -29,19 +28,15 @@ const userSchema = new mongoose.Schema({
     },
   },
   password: {
-    // unselect
     type: String,
   },
   passwordChangedAt: {
-    // unselect
     type: Date,
   },
   passwordResetToken: {
-    // unselect
     type: String,
   },
   passwordResetExpires: {
-    // unselect
     type: Date,
   },
   createdAt: {
@@ -49,9 +44,54 @@ const userSchema = new mongoose.Schema({
     default: Date.now(),
   },
   updatedAt: {
-    // unselect
     type: Date,
   },
+  verified: {
+    type: Boolean,
+    default: false,
+  },
+  otp: {
+    type: Number,
+  },
+  otp_expiry_time: {
+    type: Date,
+  },
+});
+
+userSchema.pre("save", async function (next) {
+  // Only run this function if otp was actually modified
+  if (!this.isModified("otp") || !this.otp) return next();
+
+  // Hash the otp with cost of 12
+  this.otp = await bcrypt.hash(this.otp.toString(), 12);
+
+  console.log(this.otp.toString(), "FROM PRE SAVE HOOK");
+
+  next();
+});
+
+userSchema.pre("save", async function (next) {
+  // Only run this function if password was actually modified
+  if (!this.isModified("password") || !this.password) return next();
+
+  // Hash the password with cost of 12
+  this.password = await bcrypt.hash(this.password, 12);
+
+  // Update the passwordChangedAt field
+  this.passwordChangedAt = Date.now() - 1000;
+
+  next();
+});
+
+userSchema.pre("save", function (next) {
+  // Only run this function if password was actually modified
+  if (!this.isModified("password") || this.isNew || !this.password)
+    return next();
+
+  // Update the passwordChangedAt field
+  this.passwordChangedAt = Date.now() - 1000;
+
+  next();
 });
 
 userSchema.methods.correctPassword = async function (
@@ -61,6 +101,9 @@ userSchema.methods.correctPassword = async function (
   return await bcrypt.compare(candidatePassword, userPassword);
 };
 
+userSchema.methods.correctOTP = async function (candidateOTP, userOTP) {
+  return await bcrypt.compare(candidateOTP, userOTP);
+};
 
-const User= new mongoose.Model("User" , userSchema);
+const User = mongoose.model("User", userSchema);
 module.exports = User;
