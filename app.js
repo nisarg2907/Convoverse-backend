@@ -6,6 +6,7 @@ const mongosanitize = require("express-mongo-sanitize");
 const bodyParser = require("body-parser");
 const cors = require("cors");
 const app = express();
+const routes = require("./routes/index");
 
 app.use(express.json({ limit: "10kb" }));
 app.use(bodyParser.json());
@@ -24,11 +25,15 @@ const limiter = rateLimit({
 
 app.use("/convoverse", limiter);
 app.use(express.urlencoded({ extended: true }));
-app.use(cors({
+app.use(
+  cors({
     origin: "*",
-    methods:["GET","PATCH","POST","DELETE","PUT"],
+    methods: ["GET", "PATCH", "POST", "DELETE", "PUT"],
     credentials: true,
-}));
+  })
+);
 app.use(mongosanitize());
+
+app.use(routes);
 
 module.exports = app;

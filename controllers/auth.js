@@ -1,6 +1,6 @@
 const jwt = require("jsonwebtoken");
 const filterObj = require("../utils/filterObj");
-const User = require("../models/user");
+
 const otpGenerator = require("otp-generator");
 
 const signToken = (userId) => {
