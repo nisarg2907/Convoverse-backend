@@ -1,43 +1,42 @@
-const sgMail = require("@sendgrid/mail");
-sgMail.setApiKey(process.env.SG_KEY);
+const nodemailer = require("nodemailer");
 
-const dotenv = require("dotenv");
-dotenv.config({path: "../config.env"});
-
-const sendSGMail = async({
+const sendNodeMailerMail = async ({
     recipient,
     sender,
     subject,
     html,
     attachments
-})=>{
-
-
+}) => {
     try {
-       const from = sender || "workwithnisarg29@gmail.com";
-        const msg = {
-            to : recipient,
-            from: from,
+        const transporter = nodemailer.createTransport({
+            host: "smtp.gmail.com",
+            port: 587,
+            secure: false,
+            auth: {
+                user: 'johndoeatconvoverse@gmail.com',
+                pass: 'ezcssyzzfnnojulh',
+            },
+        });
+
+        const info = await transporter.sendMail({
+            from: sender || 'johndoeatconvoverse@gmail.com',
+            to: recipient,
             subject,
             html: html,
-            text : text ,
             attachments,
-        }
-    return sgMail.send(msg);
+        });
 
-
+        console.log("Message sent: " + info.messageId);
     } catch (error) {
         console.log(error);
     }
 };
 
+exports.sendEmail = async (args) => {
+    if (process.env.NODE_ENV === "development") {
+        return Promise.resolve();
+    } else {
+        return sendNodeMailerMail(args);
+    }
+};
 
-
-
-exports.sendEmail = async(args)=>{
-  if(process.env.NODE_ENV==="development"){
- return new Promise.resolve();
-  }else{
-    return sendSGMail(args);
-  }
-}

@@ -1,16 +1,17 @@
 const jwt = require("jsonwebtoken");
 const filterObj = require("../utils/filterObj");
-
+const mailService = require("../services/mailer")
 const otpGenerator = require("otp-generator");
 
 const signToken = (userId) => {
-  jwt.sign(
+  return jwt.sign(
     {
       userId,
     },
     process.env.JWT_SECRET
   );
 };
+
 
 exports.register = async (req, res, next) => {
   const { firstName, lastName, email, password } = req.body;
@@ -28,7 +29,7 @@ exports.register = async (req, res, next) => {
   if (!existing_user && existing_user.verified) {
     res.status(400).json({
       status: "error",
-      message: " Email is already taken , please try logging in",
+      message: "Email is already taken, please try logging in",
     });
   } else if (existing_user) {
     const updated_user = await User.findOneAndUpdate(
@@ -48,6 +49,8 @@ exports.register = async (req, res, next) => {
   }
 };
 
+
+
 exports.sendOTP = async (req, res, next) => {
   const { userId } = req.body;
   const new_otp = otpGenerator.generate(6, {
@@ -62,12 +65,39 @@ exports.sendOTP = async (req, res, next) => {
     otp_expiry_time,
   });
 
-  // send mail
-  res.status(200).json({
-    status: "success",
-    message: "OTP sent successfully",
-  });
+  try {
+    const transporter = nodemailer.createTransport({
+      // Configure your email provider here
+      // For example, if using Gmail:
+      service: "Gmail",
+      auth: {
+        user: "your-email@example.com",
+        pass: "your-email-password",
+      },
+    });
+
+    const mailOptions = {
+      from: "workwithnisarg@gmail.com",
+      to: "user@gmail.com", // Replace with the recipient's email address
+      subject: "OTP for work",
+      text: `Your OTP is ${new_otp}. This is valid for the next 10 minutes`,
+    };
+
+    await transporter.sendMail(mailOptions);
+
+    res.status(200).json({
+      status: "success",
+      message: "OTP sent successfully",
+    });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({
+      status: "error",
+      message: "Failed to send OTP",
+    });
+  }
 };
+
 
 exports.verifyOTP = async (req, res, next) => {
   const { email, otp } = req.body;
@@ -80,7 +110,7 @@ exports.verifyOTP = async (req, res, next) => {
   if (!user) {
     res.status(400).json({
       status: "error",
-      message: "email is ivalid or otp is expired",
+      message: "Email is invalid or OTP is expired",
     });
   }
 
@@ -109,17 +139,17 @@ exports.login = async (req, res, next) => {
 
   if (!email || !password) {
     res.status(400).json({
-      status: " error",
-      message: " both email and password are required",
+      status: "error",
+      message: "Both email and password are required",
     });
   }
 
-  const user = await User.findOne({ email: email }.select("+password"));
+  const user = await User.findOne({ email: email }).select("+password");
 
   if (!user || !(await User.correctPassword(password, user.password))) {
     res.status(400).json({
-      status: " error",
-      message: "Email or password   is incorrect",
+      status: "error",
+      message: "Email or password is incorrect",
     });
   }
 
@@ -131,7 +161,7 @@ exports.login = async (req, res, next) => {
   });
 };
 
-exports.protect = catchAsync(async (req, res, next) => {
+exports.protect = async (req, res, next) => {
   // 1) Getting token and check if it's there
   let token;
   if (
@@ -158,28 +188,28 @@ exports.protect = catchAsync(async (req, res, next) => {
   const this_user = await User.findById(decoded.userId);
   if (!this_user) {
     return res.status(401).json({
-      message: "The user  does no longer exist.",
+      message: "The user does no longer exist.",
     });
   }
   // 4) Check if user changed password after the token was issued
   if (this_user.changedPasswordAfter(decoded.iat)) {
     return res.status(401).json({
-      message: "User recently changed password! Please log in again.",
+      message: "User recently changed the password! Please log in again.",
     });
   }
 
   // GRANT ACCESS TO PROTECTED ROUTE
   req.user = this_user;
   next();
-});
+};
 
-exports.forgotPassword = catchAsync(async (req, res, next) => {
+exports.forgotPassword = async (req, res, next) => {
   // 1) Get user based on POSTed email
   const user = await User.findOne({ email: req.body.email });
   if (!user) {
     return res.status(404).json({
       status: "error",
-      message: "There is no user with email address.",
+      message: "There is no user with the email address.",
     });
   }
 
@@ -187,10 +217,10 @@ exports.forgotPassword = catchAsync(async (req, res, next) => {
   const resetToken = user.createPasswordResetToken();
   await user.save({ validateBeforeSave: false });
 
-  // 3) Send it to user's email
+  // 3) Send it to the user's email
   try {
     const resetURL = `http://localhost:3000/auth/new-password?token=${resetToken}`;
-    // TODO => Send Email with this Reset URL to user's email address
+    // TODO => Send Email with this Reset URL to the user's email address
 
     console.log(resetURL);
 
@@ -215,9 +245,10 @@ exports.forgotPassword = catchAsync(async (req, res, next) => {
       message: "There was an error sending the email. Try again later!",
     });
   }
-});
+};
 
-exports.resetPassword = catchAsync(async (req, res, next) => {
+
+exports.resetPassword = async (req, res, next) => {
   // 1) Get user based on the token
   const hashedToken = crypto
     .createHash("sha256")
@@ -251,4 +282,4 @@ exports.resetPassword = catchAsync(async (req, res, next) => {
     message: "Password Reseted Successfully",
     token,
   });
-});
+};
