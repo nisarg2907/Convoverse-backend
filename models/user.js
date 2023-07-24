@@ -66,13 +66,16 @@ userSchema.pre("save", async function (next) {
   // Only run this function if otp was actually modified
   if (!this.isModified("otp") || !this.otp) return next();
 
-  // Hash the otp with cost of 12
-  this.otp = await bcrypt.hash(this.otp.toString(), 12);
+  console.log(this.otp.toString(), "FROM PRE SAVE HOOK"); // Check the OTP value before hashing (optional)
 
-  console.log(this.otp.toString(), "FROM PRE SAVE HOOK");
+  // No need to hash the OTP, store it directly
+  // this.otp = await bcrypt.hash(this.otp.toString(), 12);
 
   next();
 });
+
+
+
 
 userSchema.pre("save", async function (next) {
   // Only run this function if password was actually modified
@@ -105,9 +108,17 @@ userSchema.methods.correctPassword = async function (
   return await bcrypt.compare(candidatePassword, userPassword);
 };
 
+
 userSchema.methods.correctOTP = async function (candidateOTP, userOTP) {
-  return await bcrypt.compare(candidateOTP, userOTP);
+  // Ensure that both candidateOTP and userOTP are strings
+  const candidateOTPString = candidateOTP.toString();
+  const userOTPString = userOTP.toString();
+
+  return candidateOTPString===userOTPString;
 };
+
+
+
 
 userSchema.methods.createPasswordResetToken = function () {
   const resetToken = crypto.randomBytes(32).toString("hex");
