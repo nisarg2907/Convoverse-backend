@@ -1,10 +1,9 @@
 const jwt = require("jsonwebtoken");
 const filterObj = require("../utils/filterObj");
-const mailService = require("../services/mailer")
+const mailService = require("../services/mailer");
 const otpGenerator = require("otp-generator");
 const User = require("../models/user");
 const crypto = require("crypto");
-
 
 const signToken = (userId) => {
   return jwt.sign(
@@ -14,7 +13,6 @@ const signToken = (userId) => {
     process.env.JWT_SECRET
   );
 };
-
 
 exports.register = async (req, res, next) => {
   const { firstName, lastName, email, password } = req.body;
@@ -52,10 +50,6 @@ exports.register = async (req, res, next) => {
   }
 };
 
-// Define a function to generate the HTML content for the OTP email
-
-
-
 exports.sendOTP = async (req, res, next) => {
   const { userId } = req;
   const new_otp = otpGenerator.generate(6, {
@@ -69,7 +63,6 @@ exports.sendOTP = async (req, res, next) => {
     <p>Your OTP is: ${otp}</p>
     <p>This OTP is valid for the next 10 minutes.</p>`;
   };
-  
 
   const otp_expiry_time = Date.now() + 10 * 60 * 1000; // 10 Mins after otp is sent
 
@@ -88,7 +81,7 @@ exports.sendOTP = async (req, res, next) => {
     await mailService.sendEmail({
       recipient: user.email,
       subject: "Verification OTP",
-      html:  generateOTPEmailHTML(user.firstName, new_otp),
+      html: generateOTPEmailHTML(user.firstName, new_otp),
       attachments: [],
     });
 
@@ -104,7 +97,6 @@ exports.sendOTP = async (req, res, next) => {
     });
   }
 };
-
 
 exports.verifyOTP = async (req, res, next) => {
   const { email, otp } = req.body;
@@ -152,7 +144,6 @@ exports.verifyOTP = async (req, res, next) => {
   });
 };
 
-
 exports.login = async (req, res, next) => {
   const { email, password } = req.body;
 
@@ -179,7 +170,6 @@ exports.login = async (req, res, next) => {
     token,
   });
 };
-
 
 exports.protect = async (req, res, next) => {
   // 1) Getting token and check if it's there
@@ -315,4 +305,3 @@ exports.resetPassword = async (req, res, next) => {
     token,
   });
 };
-

@@ -13,9 +13,9 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(helmet());
 
-if (process.env.NODE_ENV === "development") {
-  app.use(morgan("dev"));
-}
+
+  app.use(morgan());
+
 
 const limiter = rateLimit({
   max: 3000,
