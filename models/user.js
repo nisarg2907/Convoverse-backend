@@ -60,6 +60,15 @@ const userSchema = new mongoose.Schema({
   otp_expiry_time: {
     type: Date,
   },
+  socket_id: {
+    type: String,
+  },
+  friends: [
+    {
+      type: mongoose.Schema.ObjectId,
+      ref: "User",
+    },
+  ],
 });
 
 userSchema.pre("save", async function (next) {
@@ -73,9 +82,6 @@ userSchema.pre("save", async function (next) {
 
   next();
 });
-
-
-
 
 userSchema.pre("save", async function (next) {
   // Only run this function if password was actually modified
@@ -108,17 +114,13 @@ userSchema.methods.correctPassword = async function (
   return await bcrypt.compare(candidatePassword, userPassword);
 };
 
-
 userSchema.methods.correctOTP = async function (candidateOTP, userOTP) {
   // Ensure that both candidateOTP and userOTP are strings
   const candidateOTPString = candidateOTP.toString();
   const userOTPString = userOTP.toString();
 
-  return candidateOTPString===userOTPString;
+  return candidateOTPString === userOTPString;
 };
-
-
-
 
 userSchema.methods.createPasswordResetToken = function () {
   const resetToken = crypto.randomBytes(32).toString("hex");
@@ -134,12 +136,8 @@ userSchema.methods.createPasswordResetToken = function () {
 };
 
 userSchema.methods.changedPasswordAfter = function (timestamp) {
-  
-    return timestamp < this.passwordChangedAt;
-  };
-
-
-
+  return timestamp < this.passwordChangedAt;
+};
 
 const User = mongoose.model("User", userSchema);
 module.exports = User;

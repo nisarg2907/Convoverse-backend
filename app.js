@@ -14,7 +14,11 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.use(helmet());
 
 
-  app.use(morgan());
+if (process.env.NODE_ENV === "development") {
+  app.use(morgan("dev")); // Use the "dev" format in the development environment
+} else {
+  app.use(morgan("combined")); // Use the "combined" format in other environments (production, staging, etc.)
+}
 
 
 const limiter = rateLimit({
