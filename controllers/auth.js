@@ -2,7 +2,8 @@ const jwt = require("jsonwebtoken");
 const filterObj = require("../utils/filterObj");
 const mailService = require("../services/mailer")
 const otpGenerator = require("otp-generator");
-const User = require("../models/user")
+const User = require("../models/user");
+const crypto = require("crypto");
 
 
 const signToken = (userId) => {
@@ -250,7 +251,7 @@ exports.forgotPassword = async (req, res, next) => {
 
   // 3) Send it to the user's email
   try {
-    const resetURL = `http://localhost:8080/auth/new-password?token=${resetToken}`;
+    const resetURL = `http://localhost:3000/auth/new-password?token=${resetToken}`;
     const emailHTML = generateOTPEmailHTML(user.firstName, resetURL);
 
     mailService.sendEmail({
@@ -275,7 +276,6 @@ exports.forgotPassword = async (req, res, next) => {
   }
 };
 
-
 exports.resetPassword = async (req, res, next) => {
   // 1) Get user based on the token
   const hashedToken = crypto
@@ -287,6 +287,10 @@ exports.resetPassword = async (req, res, next) => {
     passwordResetToken: hashedToken,
     passwordResetExpires: { $gt: Date.now() },
   });
+
+  console.log("Token from request:", req.body.token);
+  console.log("Hashed token from request:", hashedToken);
+  console.log("User found:", user);
 
   // 2) If token has not expired, and there is user, set the new password
   if (!user) {
@@ -307,7 +311,8 @@ exports.resetPassword = async (req, res, next) => {
 
   res.status(200).json({
     status: "success",
-    message: "Password Reseted Successfully",
+    message: "Password Reset Successfully",
     token,
   });
 };
+
