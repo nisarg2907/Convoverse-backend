@@ -4,6 +4,8 @@ const mailService = require("../services/mailer");
 const otpGenerator = require("otp-generator");
 const User = require("../models/user");
 const crypto = require("crypto");
+const util = require("util"); // Add this line to import the util module
+const promisify = util.promisify;
 
 const signToken = (userId) => {
   return jwt.sign(

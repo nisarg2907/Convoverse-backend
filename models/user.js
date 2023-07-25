@@ -141,3 +141,5 @@ userSchema.methods.changedPasswordAfter = function (timestamp) {
 
 const User = mongoose.model("User", userSchema);
 module.exports = User;
+
+
